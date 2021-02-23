@@ -1,5 +1,5 @@
 import yfinance as yf
-
+import traceback
 def get_one_day_change(ticker):
     try:
         ticker_data = yf.Ticker(ticker)
@@ -14,6 +14,8 @@ def get_one_day_change(ticker):
             change_str = f"{abs(change)}%"
         return change_str
     except Exception as exc:
+        print(exc)
+        traceback.print_exc()
         return "N/A"
 
-# print(get_one_day_change('AAPL'))
+print(get_one_day_change('SNPR-WT'))

@@ -6,12 +6,13 @@ buy_order_regex = re.compile(f"(?i)(Buy|Bought|\+|B)")
 sell_order_regex = re.compile(f"(?i)(Sell|Sold|\-|S)")
 
 def format_and_split_message(msg):
+    if len(msg) < 3:return []
     for char in "$:@":
         msg = msg.replace(char,'')
 
     # add spaces where we want to typically
-    for char in "+-":
-        msg = msg.replace(char,f"{char} ")
+    if msg[0] in "+-":
+        msg = msg[0] + " " + msg[1:]
     msg = msg.replace(' x ',' ')
 
     msg_split = msg.split(' ')
@@ -67,11 +68,14 @@ def parse_receipt_messages(messages):
         author = m.author
         content = m.content
         for m_ in content.split('\n'):
-            print(m_)
-            data = parse_single_message(m_,author.name)
-            print(data)
-            if data is None: continue
-            all_data.append(data)
+            try:
+                print(m_)
+                data = parse_single_message(m_,author.name)
+                print(data)
+                if data is None: continue
+                all_data.append(data)
+            except:
+                continue
     print(all_data)
     df = pd.DataFrame().from_records(all_data)
     print(df)
@@ -82,7 +86,7 @@ def parse_receipt_messages(messages):
 def get_hot_tickers(df):
     # Hot tickers
     order_occurrences = df.groupby(['ticker','author']).size().reset_index().rename(columns={0:'count'})
-    hot_tickers = order_occurrences.ticker.value_counts().head(5)
+    hot_tickers = order_occurrences.ticker.value_counts().head(10)
     hot_tickers = pd.DataFrame(hot_tickers).reset_index()
 
     hot_tickers.columns = ['Ticker','Unique Activity']
