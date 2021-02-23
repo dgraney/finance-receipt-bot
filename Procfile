@@ -1,0 +1,1 @@
+worker: python disco_bot.py
