@@ -10,9 +10,11 @@ import traceback
 
 reported_dates=[]
 
+
 tz = timezone('EST')
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+receipts_channel_id = int(os.getenv('RECEIPTS_CHANNEL')) # 804054712491180034 for EBITDADDIES
 
 client = discord.Client()
 
@@ -26,24 +28,27 @@ async def on_ready():
 async def on_message(message):
     # if message.content == "!t":
     #     await check_receipts()
-    pass
+    if message.content == "!forcecheck":
+        await check_receipts(force=True)
 
 @tasks.loop(minutes=5.0)
-async def check_receipts():
+async def check_receipts(force=False):
     try:
         today_str = datetime.now(tz).strftime("%Y%m%d")
 
-        if today_str in reported_dates: return # We already reported today.
         # Only trigger at 4 pm
-        if datetime.now(tz).hour != 16:
-            print("Not triggering receipt check... Waiting on market close! Current time: ",datetime.now(tz))
-            return
+        if not force:
+            if datetime.now(tz).hour != 16:
+                print("Not triggering receipt check... Waiting on market close! Current time: ",datetime.now(tz))
+                return
+            if today_str in reported_dates:
+                return # We already reported today.
 
-        test_channel = client.get_channel(813526553011027980)
+        channel = client.get_channel(receipts_channel_id)
         start_of_market = datetime.now(tz).replace(hour=9,minute=30)
         
         # Get last 200 messages in that channel
-        messages = await test_channel.history(limit=200).filter(
+        messages = await channel.history(limit=200).filter(
             lambda m:
                 m.created_at.replace(tzinfo=UTC).astimezone(tz) > start_of_market and
                 m.author != client.user
@@ -53,10 +58,11 @@ async def check_receipts():
 
         # Analyze Data
         hot_tickers = get_hot_tickers(df)
+        print(hot_tickers)
         hot_ticker_str = f"```{hot_tickers.to_string(index=False)}```"
 
-        await test_channel.send(":fire:**TODAY'S HOT TICKERS**:fire:")
-        await test_channel.send(hot_ticker_str)
+        await channel.send(":fire:**TODAY'S HOT TICKERS**:fire:")
+        await channel.send(hot_ticker_str)
 
         reported_dates.append(today_str)
     except Exception as exc:
