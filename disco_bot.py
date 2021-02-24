@@ -14,7 +14,10 @@ reported_dates=[]
 tz = timezone('EST')
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-receipts_channel_id = int(os.getenv('RECEIPTS_CHANNEL')) # 804054712491180034 for EBITDADDIES
+RECEIPTS_CHANNEL_ID = int(os.getenv('RECEIPTS_CHANNEL')) # 804054712491180034 for EBITDADDIES
+RECEIPTS_ROLE_ID = int(os.getenv('RECEIPTS_ROLE'))
+ADMIN_ROLE_ID = int(os.getenv('ADMIN_ROLE'))
+MOD_ROLE_ID = int(os.getenv('MOD_ROLE'))
 
 client = discord.Client()
 
@@ -25,11 +28,11 @@ async def on_ready():
     check_receipts.start()
 
 @client.event
-async def on_message(message):
-    # if message.content == "!t":
-    #     await check_receipts()
-    if message.content == "!forcecheck":
-        await check_receipts(force=True)
+async def on_message(ctx):
+    # ADMIN / MOD COMMANDS
+    if is_mod_or_admin(ctx):
+        if ctx.content == "!postreceipts":
+            await check_receipts(force=True)
 
 @tasks.loop(minutes=5.0)
 async def check_receipts(force=False):
@@ -44,7 +47,7 @@ async def check_receipts(force=False):
             if today_str in reported_dates:
                 return # We already reported today.
 
-        channel = client.get_channel(receipts_channel_id)
+        channel = client.get_channel(RECEIPTS_CHANNEL_ID)
         start_of_market = datetime.now(tz).replace(hour=9,minute=30)
         
         # Get last 200 messages in that channel
@@ -69,10 +72,12 @@ async def check_receipts(force=False):
         traceback.print_exc()
 
 
-# @check_receipts.before_loop
-# async def before_receipts():
-#     print('waiting...')
-#     await client.wait_until_ready()
+def is_mod_or_admin(ctx):
+    mod = discord.utils.get(ctx.guild.roles, id=MOD_ROLE_ID)
+    admin = discord.utils.get(ctx.guild.roles, id=ADMIN_ROLE_ID)
+
+    author_roles = ctx.author.roles
+    return (mod in author_roles or admin in author_roles)
 
 client.run(TOKEN)
 
