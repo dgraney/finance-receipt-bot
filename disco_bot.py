@@ -6,9 +6,11 @@ from datetime import datetime
 from pytz import timezone,UTC
 import re
 from receipt_parser import parse_receipt_messages,get_hot_tickers
+from ark_api import get_ark_trades
 import traceback
 
 reported_dates=[]
+ark_reported_dates=[]
 
 
 tz = timezone('EST')
@@ -33,6 +35,8 @@ async def on_message(ctx):
     if is_mod_or_admin(ctx):
         if ctx.content == "!postreceipts":
             await check_receipts(force=True)
+        if ctx.content == "!postarktrades":
+            await check_ark_trades(force=True)
 
 @tasks.loop(minutes=5.0)
 async def check_receipts(force=False):
@@ -67,9 +71,35 @@ async def check_receipts(force=False):
         await channel.send(":fire:**TODAY'S HOT TICKERS**:fire:")
         await channel.send(hot_ticker_str)
 
-        reported_dates.append(today_str)
+        if not force:
+            reported_dates.append(today_str)
     except Exception as exc:
         traceback.print_exc()
+
+@tasks.loop(minutes=5.0)
+async def check_ark_trades(force=False):
+    today_str = datetime.now(tz).strftime("%Y%m%d")
+    
+    if not force:
+        if today_str in ark_reported_dates: return
+
+    channel = client.get_channel(RECEIPTS_CHANNEL_ID) # Needs to be the right channel...
+    df = get_ark_trades(date="2021-02-23")
+    print(df)
+    if df is None: return
+
+    ark_trades_str = f"```{df.to_string(index=False)}```"
+
+    # Get cathie emoji
+    
+    emoji = discord.utils.get(client.emojis, name='cathie')
+    await channel.send(str(emoji))
+
+    await channel.send(f"{str(emoji)}**DAILY ARK TRADES**{str(emoji)}")
+    await channel.send(ark_trades_str)
+
+    if not force:
+        ark_reported_dates.append(today_str)
 
 
 def is_mod_or_admin(ctx):
@@ -77,6 +107,7 @@ def is_mod_or_admin(ctx):
     admin = discord.utils.get(ctx.guild.roles, id=ADMIN_ROLE_ID)
 
     author_roles = ctx.author.roles
+    print(mod,admin,author_roles,(mod in author_roles or admin in author_roles))
     return (mod in author_roles or admin in author_roles)
 
 client.run(TOKEN)
