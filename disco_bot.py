@@ -38,11 +38,14 @@ async def on_message(ctx):
     if is_mod_or_admin(ctx):
         if ctx.content == "!postreceipts":
             await check_receipts(force=True)
-        if ctx.content == "!postarktrades":
-            await check_ark_trades(force=True)
+
+    if ctx.content == "!hottrades":
+        await check_receipts(force=True,channel_id=ctx.channel.id)
+    if ctx.content == "!arktrades":
+        await check_ark_trades(force=True,channel_id=ctx.channel.id)
 
 @tasks.loop(minutes=5.0)
-async def check_receipts(force=False):
+async def check_receipts(force=False,channel_id=RECEIPTS_CHANNEL_ID):
     try:
         today_str = datetime.now(tz).strftime("%Y%m%d")
 
@@ -53,12 +56,12 @@ async def check_receipts(force=False):
                 return
             if today_str in reported_dates:
                 return # We already reported today.
-
-        channel = client.get_channel(RECEIPTS_CHANNEL_ID)
+        receipts_channel = client.get_channel(RECEIPTS_CHANNEL_ID)
+        channel = client.get_channel(channel_id)
         start_of_market = datetime.now(tz).replace(hour=9,minute=30)
         
         # Get last 200 messages in that channel
-        messages = await channel.history(limit=200).filter(
+        messages = await receipts_channel.history(limit=200).filter(
             lambda m:
                 m.created_at.replace(tzinfo=UTC).astimezone(tz) > start_of_market and
                 m.author != client.user
@@ -68,9 +71,10 @@ async def check_receipts(force=False):
 
         # Analyze Data
         hot_tickers = get_hot_tickers(df)
-        print(hot_tickers)
         hot_ticker_str = f"```{hot_tickers.to_string(index=False)}```"
 
+        if not force:
+            await channel.send(f"<@&{RECEIPTS_ROLE_ID}>")
         await channel.send(":fire:**TODAY'S HOT TICKERS**:fire:")
         await channel.send(hot_ticker_str)
 
@@ -80,7 +84,7 @@ async def check_receipts(force=False):
         traceback.print_exc()
 
 @tasks.loop(minutes=5.0)
-async def check_ark_trades(force=False):
+async def check_ark_trades(force=False,channel_id=ETF_CHANNEL_ID):
     print("checking ark trades...")
     try:
         today_str = datetime.now(tz).strftime("%Y-%m-%d")
@@ -89,7 +93,7 @@ async def check_ark_trades(force=False):
         if not force:
             if today_str in ark_reported_dates: return
 
-        channel = client.get_channel(ETF_CHANNEL_ID) # Needs to be the right channel...
+        channel = client.get_channel(channel_id) # Needs to be the right channel...
 
         if force:
             df,trade_date = get_ark_trades(latest=True) # Just get the latest dataset
@@ -98,7 +102,7 @@ async def check_ark_trades(force=False):
             if df is None: 
                 return
 
-        ark_trades_str = f"```{df.to_string(index=False)}\nSource: arkfunds.io```"
+        ark_trades_str = f"```{df.to_string(index=False,justify='center')}\nSource: arkfunds.io```"
 
         # Get cathie emoji
         emoji = discord.utils.get(client.emojis, name='cathie')
