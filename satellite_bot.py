@@ -25,8 +25,9 @@ class SatelliteBot(discord.Client):
             price = get_current_price(self.ticker)
             change = get_one_day_change(self.ticker)
             print(f"Updating {self.ticker} price to: {price}")
+            price = '{0:.4f}'.format(price)
             for guild in self.guilds:
-                await guild.me.edit(nick=str(price))
+                await guild.me.edit(nick=f"${price} USD")
 
             activity = discord.Activity(type=watching_type,name=f"{change}|{self.ticker}")
             await self.change_presence(activity=activity)
