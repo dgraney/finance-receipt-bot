@@ -1,3 +1,4 @@
+from inspect import trace
 import os
 import discord
 from discord.ext import tasks
@@ -17,6 +18,7 @@ tz = timezone('EST')
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 RECEIPTS_CHANNEL_ID = int(os.getenv('RECEIPTS_CHANNEL')) # 804054712491180034 for EBITDADDIES
+ETF_CHANNEL_ID = int(os.getenv('ETF_CHANNEL')) 
 RECEIPTS_ROLE_ID = int(os.getenv('RECEIPTS_ROLE'))
 ADMIN_ROLE_ID = int(os.getenv('ADMIN_ROLE'))
 MOD_ROLE_ID = int(os.getenv('MOD_ROLE'))
@@ -28,6 +30,7 @@ async def on_ready():
     print(f'{client.user} has connected to Discord!')
     # await client.wait_until_ready()
     check_receipts.start()
+    check_ark_trades.start()
 
 @client.event
 async def on_message(ctx):
@@ -78,37 +81,48 @@ async def check_receipts(force=False):
 
 @tasks.loop(minutes=5.0)
 async def check_ark_trades(force=False):
-    today_str = datetime.now(tz).strftime("%Y%m%d")
-    
-    if not force:
-        if today_str in ark_reported_dates: return
+    print("checking ark trades...")
+    try:
+        today_str = datetime.now(tz).strftime("%Y-%m-%d")
+        yesterday_str = datetime.now(tz).strftime("%Y-%m-%d")
+        
+        if not force:
+            if today_str in ark_reported_dates: return
 
-    channel = client.get_channel(RECEIPTS_CHANNEL_ID) # Needs to be the right channel...
-    df = get_ark_trades(date="2021-02-23")
-    print(df)
-    if df is None: return
+        channel = client.get_channel(ETF_CHANNEL_ID) # Needs to be the right channel...
 
-    ark_trades_str = f"```{df.to_string(index=False)}```"
+        if force:
+            df,trade_date = get_ark_trades(latest=True) # Just get the latest dataset
+        else:
+            df,trade_date = get_ark_trades() # Only get the data if it's for today
+            if df is None: 
+                return
 
-    # Get cathie emoji
-    
-    emoji = discord.utils.get(client.emojis, name='cathie')
-    await channel.send(str(emoji))
+        ark_trades_str = f"```{df.to_string(index=False)}\nSource: arkfunds.io```"
 
-    await channel.send(f"{str(emoji)}**DAILY ARK TRADES**{str(emoji)}")
-    await channel.send(ark_trades_str)
+        # Get cathie emoji
+        emoji = discord.utils.get(client.emojis, name='cathie')
 
-    if not force:
-        ark_reported_dates.append(today_str)
+        if force:
+            await channel.send(f"{str(emoji)}**ARK TRADES ({trade_date})**{str(emoji)}")
+        else:
+            await channel.send(f"{str(emoji)}**TODAY'S ARK TRADES ({trade_date})**{str(emoji)}")
+        await channel.send(ark_trades_str)
 
-
+        if not force:
+            ark_reported_dates.append(today_str)
+    except:
+        traceback.print_exc()
+        
 def is_mod_or_admin(ctx):
-    mod = discord.utils.get(ctx.guild.roles, id=MOD_ROLE_ID)
-    admin = discord.utils.get(ctx.guild.roles, id=ADMIN_ROLE_ID)
+    try:
+        mod = discord.utils.get(ctx.guild.roles, id=MOD_ROLE_ID)
+        admin = discord.utils.get(ctx.guild.roles, id=ADMIN_ROLE_ID)
 
-    author_roles = ctx.author.roles
-    print(mod,admin,author_roles,(mod in author_roles or admin in author_roles))
-    return (mod in author_roles or admin in author_roles)
+        author_roles = ctx.author.roles
+        return (mod in author_roles or admin in author_roles)
+    except: 
+        return False
 
 client.run(TOKEN)
 
