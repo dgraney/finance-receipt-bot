@@ -1,1 +1,1 @@
-worker: python disco_bot.py
+worker: python disco_bot.py & python satellite_bot.py "AAPL"
