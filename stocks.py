@@ -29,3 +29,5 @@ def get_one_day_change(ticker):
         print(exc)
         traceback.print_exc()
         return "N/A"
+
+# print(get_current_price("ES=F"))
