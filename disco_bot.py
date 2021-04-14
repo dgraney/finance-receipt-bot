@@ -23,6 +23,8 @@ RECEIPTS_ROLE_ID = int(os.getenv('RECEIPTS_ROLE'))
 ADMIN_ROLE_ID = int(os.getenv('ADMIN_ROLE'))
 MOD_ROLE_ID = int(os.getenv('MOD_ROLE'))
 
+CONSECUTIVE_LOL_COUNTER = {}
+
 client = discord.Client()
 
 @client.event
@@ -34,6 +36,8 @@ async def on_ready():
 
 @client.event
 async def on_message(ctx):
+    if ctx.author == client.user:
+        return
     # ADMIN / MOD COMMANDS
     if is_mod_or_admin(ctx):
         if ctx.content == "!postreceipts":
@@ -43,6 +47,20 @@ async def on_message(ctx):
         await check_receipts(force=True,channel_id=ctx.channel.id)
     if ctx.content == "!arktrades":
         await check_ark_trades(force=True,channel_id=ctx.channel.id)
+
+    if not ctx.channel.id in CONSECUTIVE_LOL_COUNTER.keys():
+        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = 0
+    
+    if ctx.content == "lol":
+        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = CONSECUTIVE_LOL_COUNTER[ctx.channel.id] + 1
+    else:
+        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = 0
+
+    if CONSECUTIVE_LOL_COUNTER[ctx.channel.id] > 2:
+        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = 0
+        channel = client.get_channel(ctx.channel.id)
+        await channel.send('lol')
+
 
 @tasks.loop(minutes=5.0)
 async def check_receipts(force=False,channel_id=RECEIPTS_CHANNEL_ID):
