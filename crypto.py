@@ -34,4 +34,4 @@ def get_quote(symbol):
     name = data[symbol]['name']
     quote_USD = round(data[symbol]['quote']['USD']['price'],2)
     quote_USD_1D = round(data[symbol]['quote']['USD']['percent_change_24h'],2)
-    return quote_USD,quote_USD_1D
+    return quote_USD, f"{quote_USD_1D} % "
