@@ -1,6 +1,7 @@
 import re
 import pandas as pd
 from stocks import get_one_day_change
+import traceback
 
 buy_order_regex = re.compile(f"(?i)(Buy|Bought|\+|B)")
 sell_order_regex = re.compile(f"(?i)(Sell|Sold|\-|S)")
@@ -74,7 +75,8 @@ def parse_receipt_messages(messages):
                 print(data)
                 if data is None: continue
                 all_data.append(data)
-            except:
+            except Exception as exc:
+                traceback.print_exc()
                 continue
     print(all_data)
     df = pd.DataFrame().from_records(all_data)

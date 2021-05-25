@@ -76,7 +76,7 @@ async def check_receipts(force=False,channel_id=RECEIPTS_CHANNEL_ID):
                 return # We already reported today.
         receipts_channel = client.get_channel(RECEIPTS_CHANNEL_ID)
         channel = client.get_channel(channel_id)
-        start_of_market = datetime.now(tz).replace(hour=9,minute=30)
+        start_of_market = datetime.now(tz).replace(hour=1,minute=0)
         
         # Get last 200 messages in that channel
         messages = await receipts_channel.history(limit=200).filter(
