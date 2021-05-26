@@ -25,6 +25,9 @@ MOD_ROLE_ID = int(os.getenv('MOD_ROLE'))
 
 CONSECUTIVE_LOL_COUNTER = {}
 
+CONSECUTIVE_MSG_COUNTER = {} 
+CURRENT_CONSECUTIVE_MSG = ""
+
 client = discord.Client()
 
 @client.event
@@ -48,18 +51,20 @@ async def on_message(ctx):
     if ctx.content == "!arktrades":
         await check_ark_trades(force=True,channel_id=ctx.channel.id)
 
-    if not ctx.channel.id in CONSECUTIVE_LOL_COUNTER.keys():
-        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = 0
+    if not ctx.channel.id in CONSECUTIVE_MSG_COUNTER.keys():
+        CONSECUTIVE_MSG_COUNTER[ctx.channel.id] = 0
     
-    if ctx.content == "lol":
-        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = CONSECUTIVE_LOL_COUNTER[ctx.channel.id] + 1
+    if ctx.content == CURRENT_CONSECUTIVE_MSG:
+        CONSECUTIVE_MSG_COUNTER[ctx.channel.id] = CONSECUTIVE_MSG_COUNTER[ctx.channel.id] + 1
     else:
-        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = 0
+        CONSECUTIVE_MSG_COUNTER[ctx.channel.id] = 0
 
-    if CONSECUTIVE_LOL_COUNTER[ctx.channel.id] > 2:
-        CONSECUTIVE_LOL_COUNTER[ctx.channel.id] = 0
+    CURRENT_CONSECUTIVE_MSG = ctx.content
+
+    if CONSECUTIVE_MSG_COUNTER[ctx.channel.id] > 2:
+        CONSECUTIVE_MSG_COUNTER[ctx.channel.id] = 0
         channel = client.get_channel(ctx.channel.id)
-        await channel.send('lol')
+        await channel.send(CURRENT_CONSECUTIVE_MSG)
 
 
 @tasks.loop(minutes=5.0)
