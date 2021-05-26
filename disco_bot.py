@@ -39,6 +39,7 @@ async def on_ready():
 
 @client.event
 async def on_message(ctx):
+    global CURRENT_CONSECUTIVE_MSG
     if ctx.author == client.user:
         return
     # ADMIN / MOD COMMANDS
