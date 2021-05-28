@@ -11,6 +11,7 @@ from ark_api import get_ark_trades
 import traceback
 
 reported_dates=[]
+reported_dates_gm=[]
 ark_reported_dates=[]
 
 
@@ -150,11 +151,12 @@ async def good_morning(channel_id=787712409111494686):
         if datetime.now(tz).hour != 8:
             print("Not triggering receipt check... Waiting on market close! Current time: ",datetime.now(tz))
             return
-        if today_str in reported_dates:
+        if today_str in reported_dates_gm:
             return # We already reported today.
         
         mm_channel = client.get_channel(channel_id)
         await mm_channel.send("gm")
+        reported_dates_gm.append(today_str)
         
     except Exception as exc:
         traceback.print_exc()
