@@ -141,7 +141,24 @@ async def check_ark_trades(force=False,channel_id=ETF_CHANNEL_ID):
             ark_reported_dates.append(today_str)
     except:
         traceback.print_exc()
+
+@tasks.loop(minutes=5.0)
+async def good_morning(channel_id=787712409111494686):
+    try:
+        today_str = datetime.now(tz).strftime("%Y%m%d")
+
+        if datetime.now(tz).hour != 8:
+            print("Not triggering receipt check... Waiting on market close! Current time: ",datetime.now(tz))
+            return
+        if today_str in reported_dates:
+            return # We already reported today.
         
+        mm_channel = client.get_channel(channel_id)
+        await mm_channel.send("gm")
+        
+    except Exception as exc:
+        traceback.print_exc()
+
 def is_mod_or_admin(ctx):
     try:
         mod = discord.utils.get(ctx.guild.roles, id=MOD_ROLE_ID)
