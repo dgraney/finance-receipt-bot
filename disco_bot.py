@@ -9,6 +9,7 @@ import re
 from receipt_parser import parse_receipt_messages,get_hot_tickers
 from ark_api import get_ark_trades
 import traceback
+import random
 
 reported_dates=[]
 reported_dates_gm=[]
@@ -52,6 +53,20 @@ async def on_message(ctx):
         await check_receipts(force=True,channel_id=ctx.channel.id)
     if ctx.content == "!arktrades":
         await check_ark_trades(force=True,channel_id=ctx.channel.id)
+
+    channel = client.get_channel(ctx.channel.id)
+    if "asts" in ctx.content.lower().split(' '):
+        if random_chance(0.01):
+            await channel.send("ASTS TO THE MOOOOOON 🚀")
+
+    if "bitch" in ctx.content.lower():
+        if random_chance(0.5):
+            await channel.send("This is why this server is a bag of dicks and no chicks smh.")
+    
+    if "bene" in ctx.content.lower().split(' '):
+        if random_chance(0.1):
+            await channel.send("WEN BENE")
+
 
     if not ctx.channel.id in CONSECUTIVE_MSG_COUNTER.keys():
         CONSECUTIVE_MSG_COUNTER[ctx.channel.id] = 0
@@ -170,6 +185,9 @@ def is_mod_or_admin(ctx):
         return (mod in author_roles or admin in author_roles)
     except: 
         return False
+
+def random_chance(chance):
+    return random.random() < chance
 
 client.run(TOKEN)
 
