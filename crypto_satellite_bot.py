@@ -24,7 +24,7 @@ class CryptoBot(discord.Client):
         try:
             price,change = get_quote(self.ticker)
             print(f"Updating {self.ticker} price to: {price}")
-            price = '{0:.4f}'.format(price)
+            price = '{0:.2f}'.format(price)
             for guild in self.guilds:
                 await guild.me.edit(nick=f"{self.ticker}")
 
