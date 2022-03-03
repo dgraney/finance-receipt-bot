@@ -19,16 +19,19 @@ class CryptoBot(discord.Client):
         print(f'{self.user} has connected to Discord!')
         self.update.start()
 
-    @tasks.loop(minutes=5.0)
+    @tasks.loop(minutes=3.0)
     async def update(self):
         try:
             price,change = get_quote(self.ticker)
             print(f"Updating {self.ticker} price to: {price}")
             price = '{0:.4f}'.format(price)
             for guild in self.guilds:
-                await guild.me.edit(nick=f"${price} USD")
+                await guild.me.edit(nick=f"{self.ticker}")
 
-            activity = discord.Activity(type=watching_type,name=f"{change}|{self.ticker}")
+            if change <= 0:
+                activity = discord.Activity(type=watching_type,name=f"${price}🔴{change}")
+            else:
+                activity = discord.Activity(type=watching_type,name=f"${price}🟢{change}")
             await self.change_presence(activity=activity)
         except:
             traceback.print_exc()
