@@ -29,9 +29,9 @@ class CryptoBot(discord.Client):
                 await guild.me.edit(nick=f"{self.ticker}")
 
             if change <= 0:
-                activity = discord.Activity(type=watching_type,name=f"${price}🔴{change}")
+                activity = discord.Activity(type=watching_type,name=f"${price}🔴{change}%")
             else:
-                activity = discord.Activity(type=watching_type,name=f"${price}🟢{change}")
+                activity = discord.Activity(type=watching_type,name=f"${price}🟢{change}%")
             await self.change_presence(activity=activity)
         except:
             traceback.print_exc()
