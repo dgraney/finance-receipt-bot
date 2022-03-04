@@ -19,7 +19,7 @@ class CryptoBot(discord.Client):
         print(f'{self.user} has connected to Discord!')
         self.update.start()
 
-    @tasks.loop(minutes=3.0)
+    @tasks.loop(minutes=6.0)
     async def update(self):
         try:
             price,change = get_quote(self.ticker)
